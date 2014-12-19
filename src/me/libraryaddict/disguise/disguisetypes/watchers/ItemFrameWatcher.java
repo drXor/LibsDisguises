@@ -13,11 +13,11 @@ public class ItemFrameWatcher extends FlagWatcher {
     public ItemStack getItem() {
         if (getValue(2, null) == null)
             return new ItemStack(0);
-        return (ItemStack) getValue(2, null);
+        return (ItemStack) getValue(8, null);
     }
 
     public int getRotation() {
-        return (Integer) getValue(3, 0);
+        return (Integer) getValue(9, 0);
     }
 
     public void setItem(ItemStack newItem) {
@@ -25,13 +25,13 @@ public class ItemFrameWatcher extends FlagWatcher {
             newItem = new ItemStack(0);
         newItem = newItem.clone();
         newItem.setAmount(1);
-        setValue(2, newItem);
-        sendData(2);
+        setValue(8, newItem);
+        sendData(8);
     }
 
     public void setRotation(int rotation) {
-        setValue(3, (byte) (rotation % 4));
-        sendData(3);
+        setValue(9, (byte) (rotation % 4));
+        sendData(9);
     }
 
 }

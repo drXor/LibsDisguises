@@ -17,7 +17,7 @@ public class AgeableWatcher extends LivingWatcher {
     }
 
     public boolean isBaby() {
-        return (Integer) getValue(12, 0) < 0;
+        return (Byte) getValue(12, 0) < 0;
     }
 
     public void setAdult() {
@@ -25,7 +25,7 @@ public class AgeableWatcher extends LivingWatcher {
     }
 
     public void setAge(int newAge) {
-        setValue(12, newAge);
+        setValue(12, (byte) newAge);
         sendData(12);
     }
 
@@ -34,7 +34,7 @@ public class AgeableWatcher extends LivingWatcher {
     }
 
     public void setBaby(boolean isBaby) {
-        setValue(12, isBaby ? -24000 : 0);
+        setValue(12, (byte) (isBaby ? -1 : 0));
         sendData(12);
     }
 

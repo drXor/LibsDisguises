@@ -36,7 +36,7 @@ public class EndermanWatcher extends LivingWatcher {
 
     @Override
     public void setItemInHand(ItemStack itemstack) {
-        setValue(16, (byte) (itemstack.getTypeId() & 255));
+        setValue(16, (short) (itemstack.getTypeId() & 255));
         setValue(17, (byte) (itemstack.getDurability() & 255));
     }
 

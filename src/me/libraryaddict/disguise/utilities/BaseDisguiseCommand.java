@@ -339,7 +339,7 @@ public abstract class BaseDisguiseCommand implements CommandExecutor {
                 throw new DisguiseParseException(ChatColor.RED + "Error! The disguise " + ChatColor.GREEN + args[0]
                         + ChatColor.RED + " doesn't exist!");
             }
-            if (!(LibVersion.is1_8() && disguiseType.is1_8()) && disguiseType.getEntityType() == null) {
+            if (disguiseType.getEntityType() == null) {
                 throw new DisguiseParseException(ChatColor.RED + "Error! This version of minecraft does not have that disguise!");
             }
             if (!map.containsKey(disguiseType)) {

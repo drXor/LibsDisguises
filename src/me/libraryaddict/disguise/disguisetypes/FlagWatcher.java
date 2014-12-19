@@ -158,7 +158,7 @@ public class FlagWatcher {
     }
 
     public String getCustomName() {
-        return (String) getValue(10, null);
+        return (String) getValue(2, null);
     }
 
     protected TargetedDisguise getDisguise() {
@@ -207,7 +207,7 @@ public class FlagWatcher {
     }
 
     public boolean isCustomNameVisible() {
-        return (Byte) getValue(11, (byte) 0) == 1;
+        return (Byte) getValue(3, (byte) 0) == 1;
     }
 
     public boolean isEntityAnimationsAdded() {
@@ -296,13 +296,13 @@ public class FlagWatcher {
         if (name != null && name.length() > 64) {
             name = name.substring(0, 64);
         }
-        setValue(10, name);
-        sendData(10);
+        setValue(2, name);
+        sendData(2);
     }
 
     public void setCustomNameVisible(boolean display) {
-        setValue(11, (byte) (display ? 1 : 0));
-        sendData(11);
+        setValue(3, (byte) (display ? 1 : 0));
+        sendData(3);
     }
 
     private void setFlag(int byteValue, boolean flag) {

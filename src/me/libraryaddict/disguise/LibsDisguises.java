@@ -15,7 +15,6 @@ import me.libraryaddict.disguise.commands.*;
 import me.libraryaddict.disguise.disguisetypes.Disguise;
 import me.libraryaddict.disguise.disguisetypes.DisguiseType;
 import me.libraryaddict.disguise.disguisetypes.FlagWatcher;
-import me.libraryaddict.disguise.disguisetypes.FutureDisguiseType;
 import me.libraryaddict.disguise.disguisetypes.watchers.AgeableWatcher;
 import me.libraryaddict.disguise.disguisetypes.watchers.GuardianWatcher;
 import me.libraryaddict.disguise.disguisetypes.watchers.HorseWatcher;
@@ -26,11 +25,9 @@ import me.libraryaddict.disguise.disguisetypes.watchers.TameableWatcher;
 import me.libraryaddict.disguise.disguisetypes.watchers.ZombieWatcher;
 import me.libraryaddict.disguise.utilities.DisguiseSound;
 import me.libraryaddict.disguise.utilities.DisguiseUtilities;
-import me.libraryaddict.disguise.utilities.FakeBoundingBox;
 import me.libraryaddict.disguise.utilities.PacketsManager;
 import me.libraryaddict.disguise.utilities.ReflectionManager;
 import me.libraryaddict.disguise.utilities.DisguiseValues;
-import me.libraryaddict.disguise.utilities.ReflectionManager.LibVersion;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Ageable;
@@ -154,7 +151,7 @@ public class LibsDisguises extends JavaPlugin {
      */
     private void registerValues() {
         for (DisguiseType disguiseType : DisguiseType.values()) {
-            if (disguiseType.getEntityType() == null && !(disguiseType.is1_8() && LibVersion.is1_8())) {
+            if (disguiseType.getEntityType() == null) {
                 continue;
             }
             Class watcherClass = null;
@@ -209,25 +206,6 @@ public class LibsDisguises extends JavaPlugin {
             if (DisguiseValues.getDisguiseValues(disguiseType) != null) {
                 continue;
             }
-            if (disguiseType.is1_8()) {
-                int entitySize = 0;
-                FutureDisguiseType futureType = disguiseType.getFutureType();
-                DisguiseValues disguiseValues = new DisguiseValues(disguiseType, null, entitySize, futureType.getMaxHealth());
-                Object[] objs = disguiseType.getFutureType().getDataWatcher();
-                for (int i = 0; i < objs.length; i += 2) {
-                    disguiseValues.setMetaValue((Integer) objs[i], objs[i + 1]);
-                }
-
-                // Get the bounding box
-                float[] box = futureType.getBoundingBox();
-                disguiseValues.setAdultBox(new FakeBoundingBox(box[0], box[1], box[2]));
-                /*     if (disguiseType == DisguiseType.RABBIT) {
-                         ((Ageable) bukkitEntity).setBaby();
-                         disguiseValues.setBabyBox(ReflectionManager.getBoundingBox(bukkitEntity));
-                     }
-                     disguiseValues.setEntitySize(ReflectionManager.getSize(bukkitEntity));*/
-                continue;
-            }
             String nmsEntityName = toReadable(disguiseType.name());
             switch (disguiseType) {
             case WITHER_SKELETON:
@@ -263,6 +241,9 @@ public class LibsDisguises extends JavaPlugin {
                 break;
             case LEASH_HITCH:
                 nmsEntityName = "Leash";
+                break;
+            case ELDER_GUARDIAN:
+                nmsEntityName = "Guardian";
                 break;
             default:
                 break;

@@ -97,30 +97,15 @@ public class DisguiseUtilities {
                 block = ((Object[]) ReflectionManager.getNmsField(ReflectionManager.getNmsClass("Block"), "byId").get(null))[Material.BED_BLOCK
                         .getId()];
             }
-
-            if (LibVersion.is1_8()) {
-                Method fromLegacyData = block.getClass().getMethod("fromLegacyData", int.class);
-                Method setType = chunkSection.getClass().getMethod("setType", int.class, int.class, int.class,
-                        ReflectionManager.getNmsClass("IBlockData"));
-                Method setSky = chunkSection.getClass().getMethod("a", int.class, int.class, int.class, int.class);
-                Method setEmitted = chunkSection.getClass().getMethod("b", int.class, int.class, int.class, int.class);
-                for (BlockFace face : new BlockFace[] { BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH }) {
-                    setType.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), fromLegacyData.invoke(block, face.ordinal()));
-                    setSky.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
-                    setEmitted.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
-                }
-            } else {
-                Method setId = chunkSection.getClass().getMethod("setTypeId", int.class, int.class, int.class,
-                        ReflectionManager.getNmsClass("Block"));
-                Method setData = chunkSection.getClass().getMethod("setData", int.class, int.class, int.class, int.class);
-                Method setSky = chunkSection.getClass().getMethod("setSkyLight", int.class, int.class, int.class, int.class);
-                Method setEmitted = chunkSection.getClass().getMethod("setEmittedLight", int.class, int.class, int.class, int.class);
-                for (BlockFace face : new BlockFace[] { BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH }) {
-                    setId.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), block);
-                    setData.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), face.ordinal());
-                    setSky.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
-                    setEmitted.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
-                }
+            Method fromLegacyData = block.getClass().getMethod("fromLegacyData", int.class);
+            Method setType = chunkSection.getClass().getMethod("setType", int.class, int.class, int.class,
+                    ReflectionManager.getNmsClass("IBlockData"));
+            Method setSky = chunkSection.getClass().getMethod("a", int.class, int.class, int.class, int.class);
+            Method setEmitted = chunkSection.getClass().getMethod("b", int.class, int.class, int.class, int.class);
+            for (BlockFace face : new BlockFace[] { BlockFace.EAST, BlockFace.WEST, BlockFace.NORTH, BlockFace.SOUTH }) {
+                setType.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), fromLegacyData.invoke(block, face.ordinal()));
+                setSky.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
+                setEmitted.invoke(chunkSection, 1 + face.getModX(), 0, 1 + face.getModZ(), 0);
             }
 
             Object[] array = (Object[]) Array.newInstance(chunkSection.getClass(), 16);
@@ -341,7 +326,7 @@ public class DisguiseUtilities {
             try {
                 packets[i] = ProtocolLibrary.getProtocolManager()
                         .createPacketConstructor(PacketType.Play.Server.MAP_CHUNK, bedChunk, true, 0, 40)
-                        .createPacket(bedChunk, true, 0, LibVersion.is1_8() ? 48 : 0);
+                        .createPacket(bedChunk, true, 0, 48);
             } catch (IllegalArgumentException ex) {
                 packets[i] = ProtocolLibrary.getProtocolManager()
                         .createPacketConstructor(PacketType.Play.Server.MAP_CHUNK, bedChunk, true, 0)
@@ -350,15 +335,9 @@ public class DisguiseUtilities {
             i++;
             // Make load packets
             if (oldLoc == null || i > 1) {
-                try {
-                    packets[i] = ProtocolLibrary.getProtocolManager()
-                            .createPacketConstructor(PacketType.Play.Server.MAP_CHUNK_BULK, Arrays.asList(bedChunk), 40)
-                            .createPacket(Arrays.asList(bedChunk), LibVersion.is1_8() ? 48 : 0);
-                } catch (IllegalArgumentException ex) {
-                    packets[i] = ProtocolLibrary.getProtocolManager()
-                            .createPacketConstructor(PacketType.Play.Server.MAP_CHUNK_BULK, List.class)
-                            .createPacket(Arrays.asList(bedChunk));
-                }
+                packets[i] = ProtocolLibrary.getProtocolManager()
+                        .createPacketConstructor(PacketType.Play.Server.MAP_CHUNK_BULK, Arrays.asList(bedChunk))
+                        .createPacket(Arrays.asList(bedChunk));
                 i++;
             }
         }
@@ -370,19 +349,13 @@ public class DisguiseUtilities {
         PacketContainer setBed = new PacketContainer(PacketType.Play.Server.BED);
         StructureModifier<Integer> bedInts = setBed.getIntegers();
         bedInts.write(0, entity.getEntityId());
-        if (LibVersion.is1_8()) {
-            PlayerWatcher watcher = disguise.getWatcher();
-            int chunkX = (int) Math.floor(playerLocation.getX() / 16D) - 17, chunkZ = (int) Math
-                    .floor(playerLocation.getZ() / 16D) - 17;
-            chunkX -= chunkX % 8;
-            chunkZ -= chunkZ % 8;
-            bedInts.write(1, (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX());
-            bedInts.write(3, (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ());
-        } else {
-            bedInts.write(1, loc.getBlockX());
-            bedInts.write(2, loc.getBlockY());
-            bedInts.write(3, loc.getBlockZ());
-        }
+        PlayerWatcher watcher = disguise.getWatcher();
+        int chunkX = (int) Math.floor(playerLocation.getX() / 16D) - 17, chunkZ = (int) Math
+                .floor(playerLocation.getZ() / 16D) - 17;
+        chunkX -= chunkX % 8;
+        chunkZ -= chunkZ % 8;
+        bedInts.write(1, (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX());
+        bedInts.write(3, (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ());
         PacketContainer teleport = new PacketContainer(PacketType.Play.Server.ENTITY_TELEPORT);
         StructureModifier<Integer> ints = teleport.getIntegers();
         ints.write(0, entity.getEntityId());
@@ -495,8 +468,8 @@ public class DisguiseUtilities {
                 }
                 if (DisguiseAPI.isDisguiseInUse(disguise)
                         && (!gameProfile.getName().equals(
-                                disguise.getSkin() != null && LibVersion.is1_7_6() ? disguise.getSkin() : disguise.getName()) || (LibVersion
-                                .is1_7_6() && !gameProfile.getProperties().isEmpty()))) {
+                                disguise.getSkin() != null ? disguise.getSkin() : disguise.getName())
+                                    || !gameProfile.getProperties().isEmpty())) {
                     disguise.setGameProfile(gameProfile);
                     DisguiseUtilities.refreshTrackers(disguise);
                 }
@@ -523,7 +496,7 @@ public class DisguiseUtilities {
             Player player = Bukkit.getPlayerExact(playerName);
             if (player != null) {
                 WrappedGameProfile gameProfile = ReflectionManager.getGameProfile(player);
-                if (!LibVersion.is1_7_6() || !gameProfile.getProperties().isEmpty()) {
+                if (!gameProfile.getProperties().isEmpty()) {
                     gameProfiles.put(playerName, gameProfile);
                     return gameProfile;
                 }
@@ -536,7 +509,7 @@ public class DisguiseUtilities {
                         final WrappedGameProfile gameProfile = lookupGameProfile(origName);
                         Bukkit.getScheduler().runTask(libsDisguises, new Runnable() {
                             public void run() {
-                                if (!LibVersion.is1_7_6() || !gameProfile.getProperties().isEmpty()) {
+                                if (!gameProfile.getProperties().isEmpty()) {
                                     if (gameProfiles.containsKey(playerName) && gameProfiles.get(playerName) == null) {
                                         gameProfiles.put(playerName, gameProfile);
                                     }
@@ -613,54 +586,17 @@ public class DisguiseUtilities {
      */
     public static List<WrappedWatchableObject> rebuildForVersion(Player player, FlagWatcher watcher,
             List<WrappedWatchableObject> list) {
-        if (!LibVersion.is1_8())
+        if (true) // Use for future protocol compatibility
             return list;
         ArrayList<WrappedWatchableObject> rebuiltList = new ArrayList<WrappedWatchableObject>();
         ArrayList<WrappedWatchableObject> backups = new ArrayList<WrappedWatchableObject>();
-        // TODO Player and Minecart
         for (WrappedWatchableObject obj : list) {
             if (obj.getValue().getClass().getName().startsWith("org.")) {
                 backups.add(obj);
                 continue;
             }
             switch (obj.getIndex()) {
-            case 2:
-            case 3:
-                if (watcher instanceof ItemFrameWatcher) {
-                    rebuiltList.add(new WrappedWatchableObject(obj.getIndex() + 6, obj.getValue()));
-                } else {
-                    backups.add(obj);
-                }
-                break;
-            case 10:
-            case 11:
-                rebuiltList.add(new WrappedWatchableObject(obj.getIndex() - 8, obj.getValue()));
-                break;
-            case 12:
-                if (watcher instanceof AgeableWatcher) {
-                    int i = (Integer) obj.getValue();
-                    rebuiltList.add(new WrappedWatchableObject(obj.getIndex(), (byte) (i < 0 ? -1 : (i >= 6000 ? 1 : 0))));
-                } else {
-                    backups.add(obj);
-                }
-                break;
-            case 16:
-                if (watcher instanceof EndermanWatcher) {
-                    rebuiltList.add(new WrappedWatchableObject(obj.getIndex(), ((Byte) obj.getValue()).shortValue()));
-                } else {
-                    backups.add(obj);
-                }
-                break;
-            case 20:
-                if (watcher instanceof MinecartWatcher) {
-                    // TODO
-                    backups.add(obj);
-                } else {
-                    backups.add(obj);
-                }
-            default:
-                backups.add(obj);
-                break;
+            // TODO: Future version support
             }
         }
         Iterator<WrappedWatchableObject> itel = backups.iterator();
@@ -687,6 +623,8 @@ public class DisguiseUtilities {
                 if (disguise.isDisguiseInUse() && disguise.getEntity() instanceof Player
                         && ((Player) disguise.getEntity()).getName().equalsIgnoreCase(player)) {
                     removeSelfDisguise((Player) disguise.getEntity());
+                    if (disguise.isSelfDisguiseVisible())
+                        selfDisguised.add(disguise.getEntity().getUniqueId());
                     ProtocolLibrary.getProtocolManager().sendServerPacket((Player) disguise.getEntity(), destroyPacket);
                     Bukkit.getScheduler().scheduleSyncDelayedTask(libsDisguises, new Runnable() {
                         public void run() {
@@ -697,7 +635,6 @@ public class DisguiseUtilities {
                             }
                         }
                     }, 2);
-                    DisguiseUtilities.sendSelfDisguise((Player) disguise.getEntity(), disguise);
                 } else {
                     final Object entityTrackerEntry = ReflectionManager.getEntityTrackerEntry(disguise.getEntity());
                     if (entityTrackerEntry != null) {
@@ -781,6 +718,7 @@ public class DisguiseUtilities {
             try {
                 if (selfDisguised.contains(disguise.getEntity().getUniqueId()) && disguise.isDisguiseInUse()) {
                     removeSelfDisguise((Player) disguise.getEntity());
+                    selfDisguised.add(disguise.getEntity().getUniqueId());
                     ProtocolLibrary.getProtocolManager().sendServerPacket((Player) disguise.getEntity(), destroyPacket);
                     Bukkit.getScheduler().scheduleSyncDelayedTask(libsDisguises, new Runnable() {
                         public void run() {
@@ -850,8 +788,7 @@ public class DisguiseUtilities {
     public static void removeSelfDisguise(Player player) {
         if (selfDisguised.contains(player.getUniqueId())) {
             // Send a packet to destroy the fake entity
-            PacketContainer packet = new PacketContainer(PacketType.Play.Server.ENTITY_DESTROY);
-            packet.getModifier().write(0, new int[] { DisguiseAPI.getSelfDisguiseId() });
+            PacketContainer packet = getDestroyPacket(DisguiseAPI.getSelfDisguiseId());
             try {
                 ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
             } catch (Exception ex) {

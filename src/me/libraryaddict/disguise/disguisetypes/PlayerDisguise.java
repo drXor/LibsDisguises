@@ -153,32 +153,30 @@ public class PlayerDisguise extends TargetedDisguise {
     }
 
     public PlayerDisguise setSkin(String skinToUse) {
-        if (LibVersion.is1_7_6()) {
-            this.skinToUse = skinToUse;
-            if (skinToUse == null) {
-                this.currentLookup = null;
-                this.gameProfile = null;
-            } else {
-                if (skinToUse.length() > 16) {
-                    this.skinToUse = skinToUse.substring(0, 16);
-                }
-                currentLookup = new LibsProfileLookup() {
+        this.skinToUse = skinToUse;
+        if (skinToUse == null) {
+            this.currentLookup = null;
+            this.gameProfile = null;
+        } else {
+            if (skinToUse.length() > 16) {
+                this.skinToUse = skinToUse.substring(0, 16);
+            }
+            currentLookup = new LibsProfileLookup() {
 
-                    @Override
-                    public void onLookup(WrappedGameProfile gameProfile) {
-                        if (currentLookup == this && gameProfile != null) {
-                            setSkin(gameProfile);
-                            if (!gameProfile.getProperties().isEmpty() && DisguiseUtilities.isDisguiseInUse(PlayerDisguise.this)) {
-                                DisguiseUtilities.refreshTrackers(PlayerDisguise.this);
-                            }
-                            currentLookup = null;
+                @Override
+                public void onLookup(WrappedGameProfile gameProfile) {
+                    if (currentLookup == this && gameProfile != null) {
+                        setSkin(gameProfile);
+                        if (!gameProfile.getProperties().isEmpty() && DisguiseUtilities.isDisguiseInUse(PlayerDisguise.this)) {
+                            DisguiseUtilities.refreshTrackers(PlayerDisguise.this);
                         }
+                        currentLookup = null;
                     }
-                };
-                WrappedGameProfile gameProfile = DisguiseUtilities.getProfileFromMojang(this.skinToUse, currentLookup);
-                if (gameProfile != null) {
-                    setSkin(gameProfile);
                 }
+            };
+            WrappedGameProfile gameProfile = DisguiseUtilities.getProfileFromMojang(this.skinToUse, currentLookup);
+            if (gameProfile != null) {
+                setSkin(gameProfile);
             }
         }
         return this;

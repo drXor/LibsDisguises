@@ -64,7 +64,7 @@ public abstract class Disguise {
     protected void createDisguise(DisguiseType newType) {
         if (getWatcher() != null)
             return;
-        if (!(LibVersion.is1_8() && newType.is1_8()) && newType.getEntityType() == null) {
+        if (newType.getEntityType() == null) {
             throw new RuntimeException(
                     "DisguiseType "
                             + newType
@@ -101,7 +101,7 @@ public abstract class Disguise {
         }
 
         else if (getType() == DisguiseType.ELDER_GUARDIAN) {
-            getWatcher().setValue(14, 0 | 4);
+            getWatcher().setValue(16, 0 | 4);
         }
         // Else if its a horse. Set the horse watcher type
         else if (getWatcher() instanceof HorseWatcher) {

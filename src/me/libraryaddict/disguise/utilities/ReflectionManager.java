@@ -29,47 +29,15 @@ import com.comphenix.protocol.wrappers.WrappedGameProfile;
 public class ReflectionManager {
 
     public enum LibVersion {
-        V1_6, V1_7, V1_7_10, V1_7_6, V1_8;
+        V1_8;
         private static LibVersion currentVersion;
         static {
-            String mcVersion = Bukkit.getVersion().split("MC: ")[1].replace(")", "");
-            if (mcVersion.startsWith("1.")) {
-                if (mcVersion.compareTo("1.7") < 0) {
-                    currentVersion = LibVersion.V1_6;
-                } else if (mcVersion.startsWith("1.7")) {
-                    if (mcVersion.equals("1.7.10")) {
-                        currentVersion = LibVersion.V1_7_10;
-                    } else {
-                        currentVersion = mcVersion.compareTo("1.7.6") < 0 ? LibVersion.V1_7 : LibVersion.V1_7_6;
-                    }
-                } else {
-                    currentVersion = V1_8;
-                }
-            }
+            //String mcVersion = Bukkit.getVersion().split("MC: ")[1].replace(")", "");
+            currentVersion = V1_8;
         }
 
         public static LibVersion getGameVersion() {
             return currentVersion;
-        }
-
-        public static boolean is1_6() {
-            return getGameVersion() == V1_6;
-        }
-
-        public static boolean is1_7() {
-            return getGameVersion() == V1_7 || is1_7_6();
-        }
-
-        public static boolean is1_7_10() {
-            return getGameVersion() == V1_7_10 || is1_8();
-        }
-
-        public static boolean is1_7_6() {
-            return getGameVersion() == V1_7_6 || is1_7_10();
-        }
-
-        public static boolean is1_8() {
-            return getGameVersion() == V1_8;
         }
     }
 
@@ -92,7 +60,6 @@ public class ReflectionManager {
      */
     private static Map<String, Map<String, Map<String, String>>> ForgeMethodMappings;
     private static final Method ihmGet;
-    private static HashMap<String, Boolean> is1_8 = new HashMap<String, Boolean>();
     private static final boolean isForge = Bukkit.getServer().getName().contains("Cauldron")
             || Bukkit.getServer().getName().contains("MCPC-Plus");
     private static final Field pingField;
@@ -235,19 +202,13 @@ public class ReflectionManager {
                 Object minecraftServer = getNmsMethod("MinecraftServer", "getServer").invoke(null);
                 Object playerinteractmanager = getNmsClass("PlayerInteractManager").getConstructor(getNmsClass("World"))
                         .newInstance(world);
-                if (LibVersion.is1_7()) {
-                    WrappedGameProfile gameProfile = getGameProfile(null, "LibsDisguises");
-                    entityObject = entityClass.getConstructor(getNmsClass("MinecraftServer"), getNmsClass("WorldServer"),
-                            gameProfile.getHandleType(), playerinteractmanager.getClass()).newInstance(minecraftServer, world,
-                            gameProfile.getHandle(), playerinteractmanager);
-                } else {
-                    entityObject = entityClass.getConstructor(getNmsClass("MinecraftServer"), getNmsClass("World"), String.class,
-                            playerinteractmanager.getClass()).newInstance(minecraftServer, world, "LibsDisguises",
-                            playerinteractmanager);
-                }
-            } else if (LibVersion.is1_8() && entityName.equals("EnderPearl")) {
+                WrappedGameProfile gameProfile = getGameProfile(null, "LibsDisguises");
+                entityObject = entityClass.getConstructor(getNmsClass("MinecraftServer"), getNmsClass("WorldServer"),
+                        gameProfile.getHandleType(), playerinteractmanager.getClass()).newInstance(minecraftServer, world,
+                        gameProfile.getHandle(), playerinteractmanager);
+            } else if (entityName.equals("EnderPearl")) {
                 entityObject = entityClass.getConstructor(getNmsClass("World"), getNmsClass("EntityLiving"))
-                        .newInstance(world, createEntityInstance("Sheep"));
+                        .newInstance(world, createEntityInstance("Cow"));
             } else {
                 entityObject = entityClass.getConstructor(getNmsClass("World")).newInstance(world);
             }
@@ -264,12 +225,7 @@ public class ReflectionManager {
 
     public static FakeBoundingBox getBoundingBox(Entity entity) {
         try {
-            Object boundingBox;
-            if (LibVersion.is1_8()) {
-                boundingBox = getNmsMethod("Entity", "getBoundingBox").invoke(getNmsEntity(entity));
-            } else {
-                boundingBox = getNmsField("Entity", "boundingBox").get(getNmsEntity(entity));
-            }
+            Object boundingBox = getNmsMethod("Entity", "getBoundingBox").invoke(getNmsEntity(entity));
             double x = 0, y = 0, z = 0;
             int stage = 0;
             for (Field field : boundingBox.getClass().getFields()) {
@@ -368,11 +324,49 @@ public class ReflectionManager {
         return null;
     }
 
-    public static WrappedGameProfile getGameProfile(Player player) {
-        if (LibVersion.is1_7() || LibVersion.is1_8()) {
-            return WrappedGameProfile.fromPlayer(player);
+    public static Object getBlockPosition(int x, int y, int z) {
+        try {
+            return getNmsClass("BlockPosition").getConstructor(int.class, int.class, int.class).newInstance(x, y, z);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
         return null;
+    }
+
+    public static Enum getEnumDirection(int direction) {
+        try {
+            return (Enum) getNmsMethod("EnumDirection", "fromType2", int.class).invoke(null, direction);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Enum getEnumPlayerInfoAction(int action) {
+        try {
+            return (Enum) getNmsClass("EnumPlayerInfoAction").getEnumConstants()[action];
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Object getPlayerInfoData(Object playerInfoPacket, WrappedGameProfile gameProfile) {
+        try {
+            Object playerListName = getNmsClass("ChatComponentText").getConstructor(String.class)
+                    .newInstance(gameProfile.getName());
+            return getNmsClass("PlayerInfoData").getConstructor(getNmsClass("PacketPlayOutPlayerInfo"),
+                    gameProfile.getHandleType(), int.class, getNmsClass("EnumGamemode"), getNmsClass("IChatBaseComponent"))
+                    .newInstance(playerInfoPacket, gameProfile.getHandle(), 0,
+                            getNmsClass("EnumGamemode").getEnumConstants()[1], playerListName);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return null;
+    }
+
+    public static WrappedGameProfile getGameProfile(Player player)   {
+        return WrappedGameProfile.fromPlayer(player);
     }
 
     public static WrappedGameProfile getGameProfile(UUID uuid, String playerName) {
@@ -387,9 +381,7 @@ public class ReflectionManager {
     public static WrappedGameProfile getGameProfileWithThisSkin(UUID uuid, String playerName, WrappedGameProfile profileWithSkin) {
         try {
             WrappedGameProfile gameProfile = new WrappedGameProfile(uuid != null ? uuid : UUID.randomUUID(), playerName);
-            if (LibVersion.is1_7_6()) {
-                gameProfile.getProperties().putAll(profileWithSkin.getProperties());
-            }
+            gameProfile.getProperties().putAll(profileWithSkin.getProperties());
             return gameProfile;
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -496,12 +488,7 @@ public class ReflectionManager {
         try {
             float length = getNmsField("Entity", "length").getFloat(getNmsEntity(entity));
             float width = getNmsField("Entity", "width").getFloat(getNmsEntity(entity));
-            float height;
-            if (LibVersion.is1_8()) {
-                height = (Float) getNmsMethod("Entity", "getHeadHeight").invoke(getNmsEntity(entity));
-            } else {
-                height = getNmsField("Entity", "height").getFloat(getNmsEntity(entity));
-            }
+            float height = (Float) getNmsMethod("Entity", "getHeadHeight").invoke(getNmsEntity(entity));
             return new float[] { length, width, height };
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -550,12 +537,12 @@ public class ReflectionManager {
             for (Method method : getNmsClass("MinecraftServer").getMethods()) {
                 if (method.getReturnType().getSimpleName().equals("GameProfileRepository")) {
                     Object profileRepo = method.invoke(minecraftServer);
-                    Object agent = Class.forName("net.minecraft.util.com.mojang.authlib.Agent").getField("MINECRAFT").get(null);
+                    Object agent = Class.forName("com.mojang.authlib.Agent").getField("MINECRAFT").get(null);
                     LibsProfileLookupCaller callback = new LibsProfileLookupCaller();
                     profileRepo
                             .getClass()
                             .getMethod("findProfilesByNames", String[].class, agent.getClass(),
-                                    Class.forName("net.minecraft.util.com.mojang.authlib.ProfileLookupCallback"))
+                                    Class.forName("com.mojang.authlib.ProfileLookupCallback"))
                             .invoke(profileRepo, new String[] { playername }, agent, callback);
                     if (callback.getGameProfile() != null) {
                         return callback.getGameProfile();
@@ -567,26 +554,6 @@ public class ReflectionManager {
             ex.printStackTrace();
         }
         return null;
-    }
-
-    public static boolean is1_8(Player player) {
-        if (LibVersion.is1_8()) {
-            if (is1_8.containsKey(player.getName())) {
-                return is1_8.get(player.getName());
-            }
-            try {
-                Object nmsEntity = getNmsEntity(player);
-                Object connection = getNmsField(nmsEntity.getClass(), "playerConnection").get(nmsEntity);
-                Field networkManager = getNmsField(connection.getClass(), "networkManager");
-                Method getVersion = getNmsMethod(networkManager.getType(), "getVersion");
-                boolean is18 = (Integer) getVersion.invoke(networkManager.get(connection)) >= 28;
-                is1_8.put(player.getName(), is18);
-                return is18;
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-        return false;
     }
 
     public static boolean isForge() {
@@ -604,7 +571,7 @@ public class ReflectionManager {
     }
 
     public static void removePlayer(Player player) {
-        is1_8.remove(player.getName());
+
     }
 
     public static void setAllowSleep(Player player) {
@@ -620,12 +587,7 @@ public class ReflectionManager {
 
     public static void setBoundingBox(Entity entity, FakeBoundingBox newBox) {
         try {
-            Object boundingBox;
-            if (LibVersion.is1_8()) {
-                boundingBox = getNmsMethod("Entity", "getBoundingBox").invoke(getNmsEntity(entity));
-            } else {
-                boundingBox = getNmsField("Entity", "boundingBox").get(getNmsEntity(entity));
-            }
+            Object boundingBox = getNmsMethod("Entity", "getBoundingBox").invoke(getNmsEntity(entity));
             int stage = 0;
             Location loc = entity.getLocation();
             for (Field field : boundingBox.getClass().getFields()) {
@@ -659,4 +621,5 @@ public class ReflectionManager {
             ex.printStackTrace();
         }
     }
+
 }

@@ -110,7 +110,7 @@ public class PlayerWatcher extends LivingWatcher {
                         PacketContainer packet = new PacketContainer(PacketType.Play.Server.ANIMATION);
                         StructureModifier<Integer> mods = packet.getIntegers();
                         mods.write(0, getDisguise().getEntity().getEntityId());
-                        mods.write(1, LibVersion.is1_7() ? 3 : 2);
+                        mods.write(1, 3);
                         for (Player player : DisguiseUtilities.getPerverts(getDisguise())) {
                             ProtocolLibrary.getProtocolManager().sendServerPacket(player, packet);
 

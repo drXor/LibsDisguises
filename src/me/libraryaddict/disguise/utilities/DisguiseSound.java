@@ -66,8 +66,7 @@ public enum DisguiseSound {
 
     PIG_ZOMBIE("mob.zombiepig.zpighurt", null, "mob.zombiepig.zpigdeath", "mob.zombiepig.zpig", "mob.zombiepig.zpigangry"),
 
-    PLAYER(LibVersion.is1_7() ? "game.player.hurt" : "damage.hit", "step.grass", LibVersion.is1_7() ? "game.player.hurt"
-            : "damage.hit", null),
+    PLAYER("game.player.hurt", "step.grass", "game.player.hurt", null),
 
     RABBIT("mob.rabbit.hurt", "mob.rabbit.hop", "mob.rabbit.death", "mob.rabbit.idle"),
 

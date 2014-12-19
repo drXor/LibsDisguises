@@ -2,17 +2,16 @@ package me.libraryaddict.disguise.disguisetypes;
 
 import java.lang.reflect.Method;
 
-import me.libraryaddict.disguise.utilities.ReflectionManager.LibVersion;
-
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Guardian;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Skeleton;
 import org.bukkit.entity.Zombie;
 
 public enum DisguiseType {
-    ARMOR_STAND(FutureDisguiseType.ARMOR_STAND),
+    ARMOR_STAND(78),
 
     ARROW(60),
 
@@ -36,7 +35,7 @@ public enum DisguiseType {
 
     EGG(62),
 
-    ELDER_GUARDIAN(FutureDisguiseType.ELDER_GUARDIAN),
+    ELDER_GUARDIAN,
 
     ENDER_CRYSTAL(51),
 
@@ -48,7 +47,7 @@ public enum DisguiseType {
 
     ENDERMAN,
 
-    ENDERMITE(FutureDisguiseType.ENDERMITE),
+    ENDERMITE,
 
     EXPERIENCE_ORB,
 
@@ -64,7 +63,7 @@ public enum DisguiseType {
 
     GIANT,
 
-    GUARDIAN(FutureDisguiseType.GUARDIAN),
+    GUARDIAN,
 
     HORSE,
 
@@ -106,7 +105,7 @@ public enum DisguiseType {
 
     PRIMED_TNT(50),
 
-    RABBIT(FutureDisguiseType.RABBIT),
+    RABBIT,
 
     SHEEP,
 
@@ -150,7 +149,7 @@ public enum DisguiseType {
 
     ZOMBIE_VILLAGER;
 
-    private static Method isVillager, getVariant, getSkeletonType;
+    private static Method isVillager, getVariant, getSkeletonType, isElder;
 
     static {
         // We set the entity type in this so that we can safely ignore disguisetypes which don't exist in older versions of MC.
@@ -175,6 +174,9 @@ public enum DisguiseType {
                 case WITHER_SKELETON:
                     toUse = DisguiseType.SKELETON;
                     break;
+                case ELDER_GUARDIAN:
+                    toUse = DisguiseType.GUARDIAN;
+                    break;
                 default:
                     break;
                 }
@@ -194,6 +196,10 @@ public enum DisguiseType {
         }
         try {
             getSkeletonType = Skeleton.class.getMethod("getSkeletonType");
+        } catch (Throwable ignored) {
+        }
+        try {
+            isElder = Guardian.class.getMethod("isElder");
         } catch (Throwable ignored) {
         }
     }
@@ -228,6 +234,15 @@ public enum DisguiseType {
                 ex.printStackTrace();
             }
             break;
+        case GUARDIAN:
+            try {
+                if ((Boolean) isElder.invoke(entity)) {
+                    disguiseType = DisguiseType.ELDER_GUARDIAN;
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            break;
         default:
             break;
         }
@@ -244,10 +259,9 @@ public enum DisguiseType {
 
     private int defaultId, entityId;
     private EntityType entityType;
-    private FutureDisguiseType futureType;
     private Class<? extends FlagWatcher> watcherClass;
 
-    private DisguiseType(FutureDisguiseType disguiseType, int... ints) {
+    private DisguiseType(int... ints) {
         for (int i = 0; i < ints.length; i++) {
             int value = ints[i];
             switch (i) {
@@ -261,13 +275,6 @@ public enum DisguiseType {
                 break;
             }
         }
-        if (LibVersion.is1_8()) {
-            futureType = disguiseType;
-        }
-    }
-
-    private DisguiseType(int... ints) {
-        this(null, ints);
     }
 
     public int getDefaultId() {
@@ -275,9 +282,6 @@ public enum DisguiseType {
     }
 
     public Class<? extends Entity> getEntityClass() {
-        if (futureType != null) {
-            return futureType.getEntityClass();
-        }
         if (entityType != null) {
             return getEntityType().getEntityClass();
         }
@@ -292,28 +296,20 @@ public enum DisguiseType {
         return entityType;
     }
 
-    public FutureDisguiseType getFutureType() {
-        return futureType;
-    }
-
     public int getTypeId() {
-        return is1_8() ? futureType.getEntityId() : (int) getEntityType().getTypeId();
+        return (int) getEntityType().getTypeId();
     }
 
     public Class getWatcherClass() {
         return watcherClass;
     }
 
-    public boolean is1_8() {
-        return futureType != null;
-    }
-
     public boolean isMisc() {
-        return is1_8() ? !futureType.isAlive() : getEntityType() != null && !getEntityType().isAlive();
+        return getEntityType() != null && !getEntityType().isAlive();
     }
 
     public boolean isMob() {
-        return is1_8() ? futureType.isAlive() : getEntityType() != null && getEntityType().isAlive() && !isPlayer();
+        return getEntityType() != null && getEntityType().isAlive() && !isPlayer();
     }
 
     public boolean isPlayer() {
