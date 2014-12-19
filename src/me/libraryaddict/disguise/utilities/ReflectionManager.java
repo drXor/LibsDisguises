@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -45,6 +46,8 @@ public class ReflectionManager {
     private static final Class<?> craftItemClass;
     private static Method damageAndIdleSoundMethod;
     private static final Field entitiesField;
+    private static final Constructor<?> boundingBoxConstructor;
+    private static final Method setBoundingBoxMethod;
     /**
      * Map of mc-dev simple class name to fully qualified Forge class name.
      */
@@ -191,6 +194,9 @@ public class ReflectionManager {
         trackerField = getNmsField("WorldServer", "tracker");
         entitiesField = getNmsField("EntityTracker", "trackedEntities");
         ihmGet = getNmsMethod("IntHashMap", "get", int.class);
+        boundingBoxConstructor = getNmsConstructor("AxisAlignedBB",double.class, double.class,  double.class,
+                double.class, double.class, double.class);
+        setBoundingBoxMethod = getNmsMethod("Entity", "a", getNmsClass("AxisAlignedBB"));
     }
 
     public static Object createEntityInstance(String entityName) {
@@ -410,6 +416,19 @@ public class ReflectionManager {
         return null;
     }
 
+    public static Constructor getNmsConstructor(Class clazz, Class<?>... parameters) {
+        try {
+            return clazz.getConstructor(parameters);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Constructor getNmsConstructor(String className, Class<?>... parameters) {
+        return getNmsConstructor(getNmsClass(className), parameters);
+    }
+
     public static Object getNmsEntity(Entity entity) {
         try {
             return getCraftClass("entity.CraftEntity").getMethod("getHandle").invoke(entity);
@@ -587,36 +606,10 @@ public class ReflectionManager {
 
     public static void setBoundingBox(Entity entity, FakeBoundingBox newBox) {
         try {
-            Object boundingBox = getNmsMethod("Entity", "getBoundingBox").invoke(getNmsEntity(entity));
-            int stage = 0;
             Location loc = entity.getLocation();
-            for (Field field : boundingBox.getClass().getFields()) {
-                if (field.getType().getSimpleName().equals("double")) {
-                    stage++;
-                    switch (stage) {
-                    case 1:
-                        field.setDouble(boundingBox, loc.getX() - newBox.getX());
-                        break;
-                    case 2:
-                        // field.setDouble(boundingBox, loc.getY() - newBox.getY());
-                        break;
-                    case 3:
-                        field.setDouble(boundingBox, loc.getZ() - newBox.getZ());
-                        break;
-                    case 4:
-                        field.setDouble(boundingBox, loc.getX() + newBox.getX());
-                        break;
-                    case 5:
-                        field.setDouble(boundingBox, loc.getY() + newBox.getY());
-                        break;
-                    case 6:
-                        field.setDouble(boundingBox, loc.getZ() + newBox.getZ());
-                        break;
-                    default:
-                        throw new Exception("Error while setting the bounding box, more doubles than I thought??");
-                    }
-                }
-            }
+            Object boundingBox = boundingBoxConstructor.newInstance(loc.getX() - newBox.getX(), loc.getY() - newBox.getY(),
+                    loc.getZ() - newBox.getZ(), loc.getX() + newBox.getX(), loc.getY() + newBox.getY(), loc.getZ() + newBox.getZ());
+            setBoundingBoxMethod.invoke(getNmsEntity(entity), boundingBox);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
