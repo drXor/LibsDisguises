@@ -1,9 +1,7 @@
 package me.libraryaddict.disguise.utilities;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -358,12 +356,26 @@ public class DisguiseUtilities {
         bedInts.write(0, entity.getEntityId());
         if (ReflectionManager.is1_8(player)) {
             PlayerWatcher watcher = disguise.getWatcher();
+            // srsly ProtocolLib
+            Object inside = setBed.getHandle();
             int chunkX = (int) Math.floor(playerLocation.getX() / 16D) - 17, chunkZ = (int) Math
                     .floor(playerLocation.getZ() / 16D) - 17;
             chunkX -= chunkX % 8;
             chunkZ -= chunkZ % 8;
-            bedInts.write(1, (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX());
-            bedInts.write(3, (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ());
+            Object pos = null;
+            try {
+                Class<?> blockpos = ReflectionManager.getNmsClass("BlockPostition");
+                Constructor<?> blockposCtr = blockpos.getConstructor(int.class, int.class, int.class);
+                pos = blockposCtr.newInstance(
+                        (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX(),
+                        0,
+                        (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ());
+                Field posfield = inside.getClass().getDeclaredField("b");
+                posfield.setAccessible(true);
+                posfield.set(inside, pos);
+            } catch (ReflectiveOperationException e) {
+                e.printStackTrace();
+            }
         } else {
             bedInts.write(1, loc.getBlockX());
             bedInts.write(2, loc.getBlockY());

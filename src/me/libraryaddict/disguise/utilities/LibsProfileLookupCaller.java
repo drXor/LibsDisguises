@@ -2,8 +2,8 @@ package me.libraryaddict.disguise.utilities;
 
 import com.comphenix.protocol.wrappers.WrappedGameProfile;
 
-import net.minecraft.util.com.mojang.authlib.GameProfile;
-import net.minecraft.util.com.mojang.authlib.ProfileLookupCallback;
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.ProfileLookupCallback;
 
 public class LibsProfileLookupCaller implements ProfileLookupCallback {
     private WrappedGameProfile gameProfile;
