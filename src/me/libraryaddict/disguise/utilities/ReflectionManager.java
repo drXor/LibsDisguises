@@ -550,12 +550,12 @@ public class ReflectionManager {
             for (Method method : getNmsClass("MinecraftServer").getMethods()) {
                 if (method.getReturnType().getSimpleName().equals("GameProfileRepository")) {
                     Object profileRepo = method.invoke(minecraftServer);
-                    Object agent = Class.forName("net.minecraft.util.com.mojang.authlib.Agent").getField("MINECRAFT").get(null);
+                    Object agent = Class.forName("com.mojang.authlib.Agent").getField("MINECRAFT").get(null);
                     LibsProfileLookupCaller callback = new LibsProfileLookupCaller();
                     profileRepo
                             .getClass()
                             .getMethod("findProfilesByNames", String[].class, agent.getClass(),
-                                    Class.forName("net.minecraft.util.com.mojang.authlib.ProfileLookupCallback"))
+                                    Class.forName("com.mojang.authlib.ProfileLookupCallback"))
                             .invoke(profileRepo, new String[] { playername }, agent, callback);
                     if (callback.getGameProfile() != null) {
                         return callback.getGameProfile();

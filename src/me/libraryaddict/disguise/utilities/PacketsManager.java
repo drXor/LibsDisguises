@@ -1,11 +1,9 @@
 package me.libraryaddict.disguise.utilities;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
+import com.comphenix.protocol.wrappers.*;
 import me.libraryaddict.disguise.DisguiseAPI;
 import me.libraryaddict.disguise.DisguiseConfig;
 import me.libraryaddict.disguise.LibsDisguises;
@@ -49,11 +47,7 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.events.PacketListener;
 import com.comphenix.protocol.reflect.StructureModifier;
-import com.comphenix.protocol.wrappers.WrappedAttribute;
 import com.comphenix.protocol.wrappers.WrappedAttribute.Builder;
-import com.comphenix.protocol.wrappers.WrappedDataWatcher;
-import com.comphenix.protocol.wrappers.WrappedGameProfile;
-import com.comphenix.protocol.wrappers.WrappedWatchableObject;
 
 public class PacketsManager {
     /**
@@ -233,7 +227,7 @@ public class PacketsManager {
                 if (removeName) {
                     DisguiseUtilities.getAddedByPlugins().remove(name);
                 }
-                spawnPackets[0].getGameProfiles().write(0, gameProfile);
+                spawnPackets[0].getModifier().write(1, gameProfile.getUUID()); //.getGameProfiles().write(0, gameProfile);
             }
             StructureModifier<Integer> intMods = spawnPackets[0].getIntegers();
             intMods.write(0, disguisedEntity.getEntityId());
@@ -276,10 +270,11 @@ public class PacketsManager {
                 }
                 spawnPackets = newPackets.toArray(new PacketContainer[newPackets.size()]);
                 spawnPackets[0] = new PacketContainer(PacketType.Play.Server.PLAYER_INFO);
-                spawnPackets[0].getGameProfiles().write(0, gameProfile);
-                spawnPackets[0].getModifier().write(4, gameProfile.getName());
+                spawnPackets[0].getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.ADD_PLAYER);
+                spawnPackets[0].getPlayerInfoDataLists().write(0, Arrays.asList(new PlayerInfoData(
+                        gameProfile, 0, EnumWrappers.NativeGameMode.NOT_SET, WrappedChatComponent.fromText(""))));
                 PacketContainer delayedPacket = spawnPackets[0].shallowClone();
-                delayedPacket.getModifier().write(0, 4);
+                delayedPacket.getPlayerInfoAction().write(0, EnumWrappers.PlayerInfoAction.REMOVE_PLAYER);
                 delayedPackets = new PacketContainer[] { delayedPacket };
             }
 

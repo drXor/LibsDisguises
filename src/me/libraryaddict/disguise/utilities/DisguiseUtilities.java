@@ -378,7 +378,7 @@ public class DisguiseUtilities {
             chunkZ -= chunkZ % 8;
             Object pos = null;
             try {
-                Class<?> blockpos = ReflectionManager.getNmsClass("BlockPostition");
+                Class<?> blockpos = ReflectionManager.getNmsClass("BlockPosition");
                 Constructor<?> blockposCtr = blockpos.getConstructor(int.class, int.class, int.class);
                 pos = blockposCtr.newInstance(
                         (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX(),

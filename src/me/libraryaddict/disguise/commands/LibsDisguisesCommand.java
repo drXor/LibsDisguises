@@ -13,7 +13,7 @@ public class LibsDisguisesCommand implements CommandExecutor {
         sender.sendMessage(ChatColor.DARK_GREEN
                 + "This server is running "
                 + "Lib's Disguises "
-                + (sender.getName().equals("libraryaddict") ? "v"
+                + (true || sender.getName().equals("libraryaddict") ? "v"
                         + Bukkit.getPluginManager().getPlugin("LibsDisguises").getDescription().getVersion() + " " : "")
                 + "by libraryaddict");
         return true;
