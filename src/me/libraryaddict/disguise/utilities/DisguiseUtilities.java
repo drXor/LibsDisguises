@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import com.comphenix.protocol.wrappers.BlockPosition;
 import me.libraryaddict.disguise.DisguiseAPI;
 import me.libraryaddict.disguise.DisguiseConfig;
 import me.libraryaddict.disguise.LibsDisguises;
@@ -370,26 +371,16 @@ public class DisguiseUtilities {
         bedInts.write(0, entity.getEntityId());
         if (LibVersion.is1_8()) {
             PlayerWatcher watcher = disguise.getWatcher();
-            // srsly ProtocolLib
-            Object inside = setBed.getHandle();
             int chunkX = (int) Math.floor(playerLocation.getX() / 16D) - 17, chunkZ = (int) Math
                     .floor(playerLocation.getZ() / 16D) - 17;
             chunkX -= chunkX % 8;
             chunkZ -= chunkZ % 8;
-            Object pos = null;
-            try {
-                Class<?> blockpos = ReflectionManager.getNmsClass("BlockPosition");
-                Constructor<?> blockposCtr = blockpos.getConstructor(int.class, int.class, int.class);
-                pos = blockposCtr.newInstance(
-                        (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX(),
-                        0,
-                        (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ());
-                Field posfield = inside.getClass().getDeclaredField("b");
-                posfield.setAccessible(true);
-                posfield.set(inside, pos);
-            } catch (ReflectiveOperationException e) {
-                e.printStackTrace();
-            }
+            setBed.getBlockPositionModifier().write(0, new BlockPosition(
+                    (chunkX * 16) + 1 + watcher.getSleepingDirection().getModX(),
+                    0,
+                    (chunkZ * 16) + 1 + watcher.getSleepingDirection().getModZ()
+            ));
+
         } else {
             bedInts.write(1, loc.getBlockX());
             bedInts.write(2, loc.getBlockY());
